@@ -1,0 +1,17 @@
+{
+  "name": "loader",
+  "version": "0.2.0",
+  "description": "Front end resources loader",
+  "main": "loader.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "js",
+    "loader",
+    "require",
+    "define"
+  ],
+  "author": "brucexyj@gmail.com",
+  "license": "ISC"
+}
