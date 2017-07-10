@@ -173,3 +173,5 @@ function setModuleReady(name) {
 ```
 
 　　至此，一个最基本功能的模块加载器就可以实现出来了。当然，像 RequireJS 等加载器要复杂得多得多，包括一些配置功能（baseUrl、paths、packages、map、config、shim等），插件机制（将css、html等资源当成模块加载），支持 CommonJS 方式，异常处理等等功能。有机会慢慢实现。
+  
+　　第一版本实现参见：https://github.com/bruce-xu/loader/blob/master/versions/0.1.0.js
