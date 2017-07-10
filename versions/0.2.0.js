@@ -5,7 +5,9 @@
 (function (root) {
   // 保存所有加载过的模块
   var modules = {};
-  // 当前解析的文件中已经加载到的模块（正常情况下，每个文件中只会定义一个模块，则此数组中只会有一个值；但某些情况，如打包后，多个文件打包成一个，此时文件中包含了多个模块定义，此变量主要处理此种场景）
+  // 当前解析的文件中已经加载到的模块（正常情况下，每个文件中只会定义一个模块，
+  // 则此数组中只会有一个值；但某些情况，如打包后，多个文件打包成一个，
+  // 此时文件中包含了多个模块定义，此变量主要处理此种场景）
   var loadedModules = {};
   // 模块状态
   var modStatus = ['init', 'loaded', 'ready'];
@@ -231,12 +233,20 @@
     return true;
   }
 
+  /**
+   * 检查当前文件内定义的模块（可能有多个）是否就绪
+   */
   function checkBatchModulesReady() {
+    // 清除上一个 timeout
     clearTimeout(timeoutHandler);
 
+    // 重新设置 timeout，会在最后当前脚本执行完，调用一次
     timeoutHandler = setTimeout(function () {
       var hasReadyThisLoop = true;
 
+      // 遍历检查当前文件内定义的模块是否就绪。由于前面定义的模块可能依赖后面的模块，
+      // 所以一轮遍历后并不能确保模块就绪检查完成。
+      // 需要循环检查，只有当每一轮没有模块就绪后，才停止遍历。
       while (hasReadyThisLoop) {
         hasReadyThisLoop = false;
 
@@ -248,6 +258,7 @@
         }
       }
 
+      // 待解析完模块状态，知道有哪些依赖的模块没有被加载后，依次去加载依赖的模块
       for (var name in loadedModules) {
         loadModuleDeps(name);
       }

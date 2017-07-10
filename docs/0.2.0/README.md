@@ -25,7 +25,7 @@ define('A', function () {
 
 　　在上一个版本中，define 函数中会检查当前模块的所有依赖模块，如有依赖模块未被加载过，则创建 script 元素去加载。现在看来不能这么做了。只有等到文件内所有模块定义都执行完，才能知道当前文件内定义了哪些模块，哪些模块已经就绪，哪些依赖模块还未被加载。一个直接想到的方案是在 script 文件的 onload 事件中做这些检查，onload 事件会保证在脚本代码都执行完后再触发。但这个方案是行不通的，因为如上面第三点所述，此文件应该通过手动添加 script 标签引入，onload 事件不受加载器控制。
 
-　　现在的问题可以抽象成如下都问题：一个文件内调用一次或多次同一个函数，需要在所有函数都调用完成后，再执行一个操作。此问题，可以通过借助 setTimeout 来解决。先定义一个全局变量 timeoutHandler，用于保存 setTimeout 的返回值。在 define 函数（也包括 require 函数，通常 require 调用也会打包在一起，所以实现时是在一个内部统一函数内）内首先调用 clearTimeout(timeoutHandler)，用于清除上一个 define 内设置的异步回调，然后在执行完当前的 define 后，调用 timeoutHandler = setTimeout()，来设置异步回调。这样就可以保证后一个 define 定义会清掉前一个 define 内的异步回调，最后只会保留一个异步回调在所有 define 都执行后才被调用。这个版本的主要代码如下：
+　　现在的问题可以抽象成如下的问题：一个文件内调用一次或多次同一个函数，需要在所有函数都调用完成后，再执行一个操作。此问题，可以通过借助 setTimeout 来解决。先定义一个变量 timeoutHandler，用于保存 setTimeout 的返回值。在 define 函数（也包括 require 函数，通常 require 调用也会被打包在一起，所以实现时是在一个内部统一函数内）内首先调用 clearTimeout(timeoutHandler)，用于清除上一个 define 内设置的异步回调，然后在执行完当前的 define 后，调用 timeoutHandler = setTimeout()，来设置异步回调。这样就可以保证后一个 define 定义会清掉前一个 define 内的异步回调，最后只会保留一个异步回调在所有 define 都执行后才被调用。这个版本的主要代码如下：
 
 ``` javascript
 function checkBatchModulesReady() {
@@ -60,4 +60,6 @@ function checkBatchModulesReady() {
 }
 ```
 
-　　具体实现代码可参见：https://github.com/bruce-xu/loader/blob/master/versions/0.2.0.js。
+　　这个迭代版本中做了些优化，使支持单个文件内定义多个模块，以满足现实场景中出现的打包问题。后续有时间再继续优化增加其它功能。
+
+　　本迭代版本代码：https://github.com/bruce-xu/loader/blob/master/versions/0.2.0.js。
