@@ -24,3 +24,42 @@ define('A', function () {
 
 
 　　在上一个版本中，define 函数中会检查当前模块的所有依赖模块，如有依赖模块未被加载过，则创建 script 元素去加载。现在看来不能这么做了。只有等到文件内所有模块定义都执行完，才能知道当前文件内定义了哪些模块，哪些模块已经就绪，哪些依赖模块还未被加载。一个直接想到的方案是在 script 文件的 onload 事件中做这些检查，onload 事件会保证在脚本代码都执行完后再触发。但这个方案是行不通的，因为如上面第三点所述，此文件应该通过手动添加 script 标签引入，onload 事件不受加载器控制。
+
+　　既然 onload 事件由于不受 loader 控制而无法使用，那可以通过 setTimeout 模拟一个类似 onload 的事件。
+  
+　　现在的问题可以抽象成如下都问题：一个文件内调用一次或多次同一个函数，需要在所有函数都调用完成后，再执行一个操作。此问题，可以通过借助 setTimeout 来解决。先定义一个全局变量 timeoutHandler，用于保存 setTimeout 的返回值。在 define 函数（也包括 require 函数，通常 require 调用也会打包在一起，所以实现时是在一个内部统一函数内）内首先调用 clearTimeout(timeoutHandler，用于保存) 清除上一个 define 内设置的异步回调，然后在执行完当前的 define 后，调用 timeoutHandler = setTimeout()，来设置异步回调。这样就可以保证后一个 define 定义会清掉前一个 define 内的异步回调，最后只会保留一个异步回调在所有 define 都执行后才被调用。代码如下：
+
+``` javascript
+function checkBatchModulesReady() {
+  // 清除上一个 timeout
+  clearTimeout(timeoutHandler);
+
+  // 重新设置 timeout，会在最后当前脚本执行完，调用一次
+  timeoutHandler = setTimeout(function () {
+    var hasReadyThisLoop = true;
+
+    // 遍历检查当前文件内定义的模块是否就绪。由于前面定义的模块可能依赖后面的模块，
+    // 所以一轮遍历后并不能确保模块就绪检查完成。
+    // 需要循环检查，只有当每一轮没有模块就绪后，才停止遍历。
+    while (hasReadyThisLoop) {
+      hasReadyThisLoop = false;
+
+      for (var name in loadedModules) {
+        if (checkModuleReady(name)) {
+          setModuleReady(name);
+          hasReadyThisLoop = true;
+        }
+      }
+    }
+
+    // 待解析完模块状态，知道有哪些依赖的模块没有被加载后，依次去加载依赖的模块
+    for (var name in loadedModules) {
+      loadModuleDeps(name);
+    }
+
+    loadedModules = {};
+  });
+}
+```
+
+　　具体实现代码可参见：https://github.com/bruce-xu/loader/blob/master/versions/0.2.0.js。
